@@ -15,7 +15,7 @@ namespace Checkers
         public int BlackKings;
         public int WhitePawns;
         public int WhiteKings;
-        private int CountKingMoves;
+        public int CountKingMoves;
 
         public void SetUpBoard()
         {
@@ -27,9 +27,9 @@ namespace Checkers
 
                 Cell disc = Cell.Empty;
                 if (i <= 2)
-                    disc = Cell.BlackDisc;
+                    disc = Cell.BlackPawn;
                 else if (i >= 5)
-                    disc = Cell.WhiteDisc;
+                    disc = Cell.WhitePawn;
 
                 for (int j = col; j < SIZE; j += 2)
                 {
@@ -37,17 +37,41 @@ namespace Checkers
                 }
             }
 
-            BlackPawns = 20;
-            WhitePawns = 20;
+            BlackPawns = 12;
+            WhitePawns = 12;
             BlackKings = 0;
             WhiteKings = 0;
             CountKingMoves = 0;
+        }
+
+        public (int, int) FindRemoveItem(Move move)
+        {
+            Cell moved = Board[move.startRow, move.startCol];
+            if (moved == Cell.BlackPawn || moved == Cell.WhitePawn)
+            {
+                return ((move.toRow + move.startRow) / 2, (move.toCol + move.startCol) / 2);
+            }
+
+            int colChange = move.startCol > move.toCol ? -1 : 1;
+            int rowChange = move.startRow > move.toRow ? -1 : 1;
+            int row = move.startRow + rowChange;
+            int col = move.startCol + colChange;
+            while (row != move.toRow)
+            {
+                if (Board[row, col] != Cell.Empty)
+                    return (row, col);
+                row += rowChange;
+                col += colChange;
+            }
+
+            return (-1, -1);
         }
 
         // Check if move is valid and then return game condition
         public GameCondition Move(Move move, Color side)
         {
             var possibleMoves = GetPossibleMoves(side);
+
             if (!possibleMoves.Contains(move))
             {
                 return GameCondition.InvalidMove;
@@ -61,20 +85,20 @@ namespace Checkers
 
             if (m.IsJump)
             {
-                int row = (m.toRow + m.startRow) / 2;
-                int col = (m.toCol + m.startCol) / 2;
+                (int row, int col) = FindRemoveItem(m);
+
                 Cell removeType = Board[row, col];
                 Board[row, col] = Cell.Empty;
 
                 switch (removeType)
                 {
-                    case Cell.BlackDisc:
+                    case Cell.BlackPawn:
                         BlackPawns--;
                         break;
                     case Cell.BlackKing:
                         BlackKings--;
                         break;
-                    case Cell.WhiteDisc:
+                    case Cell.WhitePawn:
                         WhitePawns--;
                         break;
                     case Cell.WhiteKing:
@@ -88,7 +112,7 @@ namespace Checkers
                     return GameCondition.BlackWin;
 
                 // check if additioanal move nedeed
-                possibleMoves = GetDiscPossibleMoves(m.toRow, m.toCol, side);
+                possibleMoves = GetPawnsPossibleMoves(m.toRow, m.toCol, side);
                 if (possibleMoves.Any(x => x.IsJump))
                     return GameCondition.AdditionalMove;
             }
@@ -96,13 +120,13 @@ namespace Checkers
             // check kings
             if (cellType != Cell.BlackKing && cellType != Cell.WhiteKing)
             {
-                if (cellType == Cell.WhiteDisc && m.toRow == 0)
+                if (cellType == Cell.WhitePawn && m.toRow == 0)
                 {
                     Board[m.toRow, m.toCol] = Cell.WhiteKing;
                     WhiteKings++;
                     WhitePawns--;
                 }
-                else if (cellType == Cell.BlackDisc && m.toRow == SIZE - 1)
+                else if (cellType == Cell.BlackPawn && m.toRow == SIZE - 1)
                 {
                     Board[m.toRow, m.toCol] = Cell.BlackKing;
                     BlackKings++;
@@ -121,15 +145,22 @@ namespace Checkers
         }
 
 
-        public void AIMove(Move move, Color side)
+        public GameCondition AIMove(Move move, Color side)
         {
-            // complete move AI
+            GameCondition condition = Move(move, side);
+
+            while (condition is GameCondition.AdditionalMove)
+            {
+                condition = Move(GetPossibleMoves(side)[0], side);
+            }
+
+            return condition;
         }
 
         public List<Move> GetPossibleMoves(Color side)
         {
             List<Move> moves = new List<Move>();
-            Cell discColor = side == Color.Black ? Cell.BlackDisc : Cell.WhiteDisc;
+            Cell pawnColor = side == Color.Black ? Cell.BlackPawn : Cell.WhitePawn;
             Cell kingColor = side == Color.Black ? Cell.BlackKing : Cell.WhiteKing;
 
             for (int i = 0; i < SIZE; i++)
@@ -137,10 +168,10 @@ namespace Checkers
                 for (int j = 0; j < SIZE; j++)
                 {
                     Cell currentCell = Board[i, j];
-                    if (currentCell == discColor)
-                        moves.AddRange(GetDiscPossibleMoves(i, j, side));
+                    if (currentCell == pawnColor)
+                        moves.AddRange(GetPawnsPossibleMoves(i, j, side));
                     else if (currentCell == kingColor)
-                        moves.AddRange(GetKingPossibleMoves(i, j, side));
+                        moves.AddRange(GetKingsPossibleMoves(i, j, side));
                 }
             }
 
@@ -148,7 +179,7 @@ namespace Checkers
             return x.Count == 0 ? moves : x;
         }
 
-        public List<Move> GetDiscPossibleMoves(int row, int col, Color side)
+        public List<Move> GetPawnsPossibleMoves(int row, int col, Color side)
         {
             //Separate empty move VS eating moves and return only the best moves (if eats not empty >> only eats;;)
 
@@ -204,18 +235,18 @@ namespace Checkers
             return moves;
         }
 
-        public List<Move> GetKingPossibleMoves(int row, int col, Color side)
+        public List<Move> GetKingsPossibleMoves(int row, int col, Color side)
         {
             List<Move> moves = new List<Move>();
-            moves.AddRange(GetKingPossibleMoves(row, col, side, true, true));
-            moves.AddRange(GetKingPossibleMoves(row, col, side, true, false));
-            moves.AddRange(GetKingPossibleMoves(row, col, side, false, true));
-            moves.AddRange(GetKingPossibleMoves(row, col, side, false, false));
+            moves.AddRange(GetKingsPossibleMoves(row, col, side, true, true));
+            moves.AddRange(GetKingsPossibleMoves(row, col, side, true, false));
+            moves.AddRange(GetKingsPossibleMoves(row, col, side, false, true));
+            moves.AddRange(GetKingsPossibleMoves(row, col, side, false, false));
 
             return moves;
         }
 
-        public List<Move> GetKingPossibleMoves(int row, int col, Color side, bool back, bool right)
+        public List<Move> GetKingsPossibleMoves(int row, int col, Color side, bool back, bool right)
         {
             List<Move> moves = new List<Move>();
             int change = side == Color.Black ? -1 : 1;
@@ -251,12 +282,12 @@ namespace Checkers
             
             if (side == Color.Black)
             {
-                if (cell == Cell.WhiteDisc || cell == Cell.WhiteKing)
+                if (cell == Cell.WhitePawn || cell == Cell.WhiteKing)
                     return true;
             }
             else if (side == Color.White)
             {
-                if (cell == Cell.BlackDisc || cell == Cell.BlackKing)
+                if (cell == Cell.BlackPawn || cell == Cell.BlackKing)
                     return true;
             }
 
@@ -273,17 +304,68 @@ namespace Checkers
             return false;
         }
 
-        //HEURISTIC BOARD ESTIMATION FUNCTION
-        public double EstimateBoard(Color side)
+
+        /* 
+             BOARD ESTIMATION HEURISTICS
+        */
+
+        // Kings weigth
+        public double EstimateBoard2(Color side)
         {
-            //TODO 
-            return 0;
+            double weight = 2;
+
+            if (side == Color.White)
+            {
+                return WhiteKings * weight + WhitePawns - BlackKings * weight - BlackPawns;
+            }
+
+            return BlackKings * weight + BlackPawns - WhiteKings * weight - WhitePawns;
         }
 
-        public Cell[,] CloneBoard()
+        // Board position weigth
+        public double EstimateBoard(Color side)
         {
-            /*clone board*/
-            return null;
+            double WhiteResult = 0;
+            double BlackResult = 0;
+
+            for (int i = 0; i < SIZE; i++)
+            {
+                for (int j = 0; j < SIZE; j++)
+                {
+                    switch(Board[i, j])
+                    {
+                        case Cell.BlackPawn:
+                            BlackResult += i >= 4 ? 7 : 5;  // opponent side 7
+                            BlackResult += j == 0 || j == 7 ? 3 : 0;    // +3 if on edge
+                            break;
+                        case Cell.WhitePawn:
+                            WhiteResult += i <= 3 ? 7 : 5;
+                            WhiteResult += j == 0 || j == 7 ? 3 : 0;
+                            break;
+                        case Cell.BlackKing:
+                            BlackResult += 10;
+                            break;
+                        case Cell.WhiteKing:
+                            WhiteResult += 10;
+                            break;
+                    }
+                }
+            }
+
+            if (side == Color.White)
+            {
+                return WhiteResult - BlackResult;
+            }
+
+            return BlackKings - WhiteResult;
+        }
+
+
+        public GameBoard CloneBoard()
+        {
+            Cell[,] clone = (Cell[,]) Board.Clone();
+
+            return new GameBoard() { Board = clone, BlackKings = BlackKings, BlackPawns = BlackPawns, WhiteKings = WhiteKings, WhitePawns = WhitePawns, CountKingMoves = CountKingMoves };
         }
 
         public override string ToString()
@@ -302,9 +384,9 @@ namespace Checkers
                     String row = "";
                     if (j == -1)
                         row = i + "";
-                    else if (Board[i, j] == Cell.WhiteDisc)
+                    else if (Board[i, j] == Cell.WhitePawn)
                         row = "w";
-                    else if (Board[i, j] == Cell.BlackDisc)
+                    else if (Board[i, j] == Cell.BlackPawn)
                         row = "b";
                     else if (Board[i, j] == Cell.WhiteKing)
                         row = "W";
@@ -320,7 +402,5 @@ namespace Checkers
             }
             return b.ToString();
         }
-
     }
-
 }

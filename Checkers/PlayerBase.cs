@@ -11,10 +11,10 @@ namespace Checkers
         public String Name;
         public Color Side;
 
-        public PlayerBase(String name, Color color)
+        public PlayerBase(String name, Color side)
         {
             this.Name = name;
-            this.Side = color;
+            this.Side = side;
         }
 
         public override string ToString()

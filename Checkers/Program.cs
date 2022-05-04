@@ -21,8 +21,12 @@ namespace Checkers
             //board.Board[3, 7] = Cell.Empty;
             //Console.WriteLine(" \n" + board);
 
-            //Move mo = new Move(3, 4, 2, 5);
-            //Console.WriteLine(board.IsValidMove(mo, Color.White));
+            //GameBoard clone = board.CloneBoard();
+
+            //Move mo = new Move(6, 5, 4, 7);
+            //Console.WriteLine(clone.Move(mo, Color.White));
+            //Console.WriteLine("\n clone board:\n" + clone);
+            //Console.WriteLine(" \n" + board);
 
 
 

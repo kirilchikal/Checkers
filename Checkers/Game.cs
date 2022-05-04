@@ -10,9 +10,11 @@ namespace Checkers
     {
         public void Start()
         {
-            // Initialize players (hum-hum;hum-ai;ai-ai)
-            Player player1 = new Player("Human 1", Color.White);
-            Player player2 = new Player("Human 2", Color.Black);
+            // Initialize players
+            //Player player1 = new Player("Alenka", Color.White);
+            AIPlayer player1 = new AIPlayer("AI-player 1", Color.White, 4, true);
+            //Player player2 = new Player("Human 2", Color.Black);
+            AIPlayer player2 = new AIPlayer("AI-player 2", Color.Black, 4, false);
 
             // Initialize and set up game board
             GameBoard board = new GameBoard();
@@ -42,13 +44,14 @@ namespace Checkers
 
                 if (currentPlayer is AIPlayer)
                 {
-                    //minimax -> move
-                    //board.AIMove(move);
-                    condition = GameCondition.NextMove;
+                    Console.WriteLine($"{currentPlayer.Name} turn:");
+                    move = ((AIPlayer) currentPlayer).GetMove(board);
+                    Console.WriteLine(move);
+                    condition = board.AIMove(move, currentPlayer.Side);
                 }
                 else
                 {
-                    Console.WriteLine($"{currentPlayer.Name}'s turn:");
+                    Console.WriteLine($"{currentPlayer.Name} turn:");
                     var cr = Console.ReadLine();
                     while (cr == "moves")
                     {
@@ -56,8 +59,15 @@ namespace Checkers
                         cr = Console.ReadLine();
                     }
 
-                    var text = cr.Split(' ');
-                    move = new Move(int.Parse(text[0]), int.Parse(text[1]), int.Parse(text[2]), int.Parse(text[3]));
+                    if (string.IsNullOrEmpty(cr))   //make random move
+                    {
+                        move = possibleMoves.OrderBy(m => Guid.NewGuid()).ToArray()[0];
+                    }
+                    else
+                    {
+                        var text = cr.Split(' ');
+                        move = new Move(int.Parse(text[0]), int.Parse(text[1]), int.Parse(text[2]), int.Parse(text[3]));
+                    }
                     Console.WriteLine(move);
                     condition = board.Move(move, currentPlayer.Side);
                 }
@@ -84,21 +94,33 @@ namespace Checkers
                             whiteTurn = true;
                         }
                         Console.WriteLine(board.ToString());
+                        Console.WriteLine($"BP-{board.BlackPawns}, WP-{board.WhitePawns}");
                         break;
                     case GameCondition.Draw:
-                        Console.WriteLine("The game ended in a draw");
+                        Console.WriteLine("The game ended in a draw.\n");
                         continueGame = false;
+                        if (player1 is AIPlayer) ShowStatistics(player1);
+                        if (player2 is AIPlayer) ShowStatistics(player2);
                         break;
                     default:
-                        Console.WriteLine("The game ended");
+                        Console.WriteLine("The game ended.");
                         if (condition == GameCondition.BlackWin)
                             Console.WriteLine($"Player {currentPlayer.Name} win. (Black side)");
-                        else Console.WriteLine($"Player {currentPlayer.Name} win. (White side)");
+                        else Console.WriteLine($"Player {currentPlayer.Name} win. (White side)\n");
                         continueGame = false;
+                        if (player1 is AIPlayer) ShowStatistics(player1);
+                        if (player2 is AIPlayer) ShowStatistics(player2);
                         break;
                 }
                 
             }
+        }
+
+        public void ShowStatistics(AIPlayer player)
+        {
+            double avNodes = player.Nodes.Sum() / player.Nodes.Count;
+            long avTime = player.SearchTime.Sum() / player.SearchTime.Count;
+            Console.WriteLine($"{player.Name}:\nAverage move search time: {avTime} ms\nAverage num of visited nodes: {avNodes}");
         }
 
         private void PrintPossibleMoves(List<Move> moves, Color side)

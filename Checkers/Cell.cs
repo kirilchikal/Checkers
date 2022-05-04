@@ -9,8 +9,8 @@ namespace Checkers
     public enum Cell
     {
         Empty,
-        BlackDisc,
-        WhiteDisc,
+        BlackPawn,
+        WhitePawn,
         BlackKing,
         WhiteKing
     }
