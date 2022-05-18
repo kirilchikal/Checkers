@@ -9,7 +9,6 @@ namespace Checkers
     public class AIPlayer : PlayerBase
     {
         public int Level;
-        public bool AlphaBeta;
 
         public List<int> Nodes;
         public List<long> SearchTime;
@@ -17,10 +16,9 @@ namespace Checkers
 
         private int NodesNum;
 
-        public AIPlayer(string name, Color side, int level, bool alphabeta) : base(name, side)
+        public AIPlayer(string name, Color side, int level) : base(name, side)
         {
             this.Level = level;
-            this.AlphaBeta = alphabeta;
             Nodes = new List<int>();
             SearchTime = new List<long>();
             watch = new System.Diagnostics.Stopwatch();
@@ -54,15 +52,8 @@ namespace Checkers
             {
                 clone = board.CloneBoard();
                 clone.AIMove(moves[i], this.Side);
-                if (AlphaBeta)
-                    estimations.Add(MiniMaxAlphaBeta(clone, ChangeSide(this.Side), Level - 1, alfa, beta, false));
-                else
-                    estimations.Add(MiniMax(clone, ChangeSide(this.Side), Level - 1, false));
-            }
-
-            for (int i = 0; i < estimations.Count; i++)
-            {
-                Console.WriteLine($"1: {estimations[i]}");
+                //estimations.Add(MiniMax(clone, ChangeSide(this.Side), Level - 1, false));
+                estimations.Add(MiniMaxAlphaBeta(clone, ChangeSide(this.Side), Level - 1, alfa, beta, false));
             }
 
             double maxValue = estimations.Max();
@@ -119,11 +110,13 @@ namespace Checkers
             }
         }
 
+        // mini-max algorithm with alpha and beta cuts operation
         public double MiniMaxAlphaBeta(GameBoard board, Color side, int level, double alfa, double beta, bool isMax)
         {
             NodesNum++;
             if (level == 0)
                 return board.EstimateBoard(this.Side);
+
 
             List<Move> moves = board.GetPossibleMoves(side);
             if (moves.Count == 0)

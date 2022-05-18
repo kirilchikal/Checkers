@@ -11,6 +11,14 @@ namespace Checkers
 
 
 
+            //for (int i = 0; i < 5; i++)
+            //{
+            //    checkers.Start();
+            //}
+
+            //Console.WriteLine("b: " + checkers.b + "   w: " + checkers.w + "   rem: "+ checkers.rem);
+
+
             //GameBoard board = new GameBoard();
             //board.SetUpBoard();
 

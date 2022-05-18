@@ -136,7 +136,6 @@ namespace Checkers
 
             if (WhitePawns == 0 && BlackPawns == 0)
             {
-                Console.WriteLine($"Only King moves: {CountKingMoves++}");
                 if (CountKingMoves == 15)
                     return GameCondition.Draw;
             }
@@ -336,11 +335,11 @@ namespace Checkers
                     {
                         case Cell.BlackPawn:
                             BlackResult += i >= 4 ? 7 : 5;  // opponent side 7
-                            BlackResult += j == 0 || j == 7 ? 3 : 0;    // +3 if on edge
+                            if(side == Color.Black && (j == 0 ||  j == 7)) BlackResult += 3;    // +3 if on edge
                             break;
                         case Cell.WhitePawn:
                             WhiteResult += i <= 3 ? 7 : 5;
-                            WhiteResult += j == 0 || j == 7 ? 3 : 0;
+                            if (side == Color.White && (j == 0 || j == 7)) WhiteResult += 3;
                             break;
                         case Cell.BlackKing:
                             BlackResult += 10;
@@ -357,7 +356,7 @@ namespace Checkers
                 return WhiteResult - BlackResult;
             }
 
-            return BlackKings - WhiteResult;
+            return BlackResult - WhiteResult;
         }
 
 

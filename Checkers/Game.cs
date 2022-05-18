@@ -8,17 +8,23 @@ namespace Checkers
 {
     public class Game
     {
+        public int w = 0;
+        public int b = 0;
+        public int rem = 0;
         public void Start()
         {
             // Initialize players
-            //Player player1 = new Player("Alenka", Color.White);
-            AIPlayer player1 = new AIPlayer("AI-player 1", Color.White, 4, true);
+
+            //Player player1 = new Player("Human 1", Color.White);
+            AIPlayer player1 = new AIPlayer("AI-player 1", Color.White, 5);
             //Player player2 = new Player("Human 2", Color.Black);
-            AIPlayer player2 = new AIPlayer("AI-player 2", Color.Black, 4, false);
+            AIPlayer player2 = new AIPlayer("AI-player 2", Color.Black, 5);
+
 
             // Initialize and set up game board
             GameBoard board = new GameBoard();
             board.SetUpBoard();
+
 
             // First move should be done by player with white pawns
             PlayerBase currentPlayer = player1;
@@ -37,8 +43,15 @@ namespace Checkers
                 if (possibleMoves.Count == 0)
                 {
                     if (whiteTurn)
+                    {
                         Console.WriteLine($"Player {player2.Name} win. (Black side)");
-                    else Console.WriteLine($"Player {player1.Name} win. (White side)");
+                        b++;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Player {player1.Name} win. (White side)");
+                        w++;
+                    }
                     break;
                 }
 
@@ -95,18 +108,28 @@ namespace Checkers
                         }
                         Console.WriteLine(board.ToString());
                         Console.WriteLine($"BP-{board.BlackPawns}, WP-{board.WhitePawns}");
+                        if (board.BlackPawns == 0 && board.WhitePawns == 0)
+                            Console.WriteLine($"Only King moves: {board.CountKingMoves++}");
                         break;
                     case GameCondition.Draw:
                         Console.WriteLine("The game ended in a draw.\n");
                         continueGame = false;
                         if (player1 is AIPlayer) ShowStatistics(player1);
                         if (player2 is AIPlayer) ShowStatistics(player2);
+                        rem++;
                         break;
                     default:
                         Console.WriteLine("The game ended.");
                         if (condition == GameCondition.BlackWin)
+                        {
                             Console.WriteLine($"Player {currentPlayer.Name} win. (Black side)");
-                        else Console.WriteLine($"Player {currentPlayer.Name} win. (White side)\n");
+                            b++;
+                        }
+                        else 
+                        { 
+                            Console.WriteLine($"Player {currentPlayer.Name} win. (White side)\n");
+                            w++;
+                        }
                         continueGame = false;
                         if (player1 is AIPlayer) ShowStatistics(player1);
                         if (player2 is AIPlayer) ShowStatistics(player2);
@@ -116,10 +139,11 @@ namespace Checkers
             }
         }
 
-        public void ShowStatistics(AIPlayer player)
+        public void ShowStatistics(PlayerBase player)
         {
-            double avNodes = player.Nodes.Sum() / player.Nodes.Count;
-            long avTime = player.SearchTime.Sum() / player.SearchTime.Count;
+            AIPlayer pl = (AIPlayer)player;
+            double avNodes = pl.Nodes.Sum() / pl.Nodes.Count;
+            long avTime = pl.SearchTime.Sum() / pl.SearchTime.Count;
             Console.WriteLine($"{player.Name}:\nAverage move search time: {avTime} ms\nAverage num of visited nodes: {avNodes}");
         }
 
